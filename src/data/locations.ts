@@ -3,7 +3,24 @@ export type ExternalPanel = {
   title: string;
   description: string;
   url: string;
-  kind: "iframe";
+  displayMode?: "iframe" | "link";
+  logoUrl?: string;
+  linkNote?: string;
+  cellGroup?: string;
+};
+
+export type UwGuideItem = {
+  title: string;
+  description?: string;
+  rows?: {
+    label: string;
+    value: string;
+  }[];
+};
+
+export type UwPressureLevel = {
+  elevationFt: number;
+  pressureHpa: number;
 };
 
 export type UwTimeHeightConfig = {
@@ -12,7 +29,12 @@ export type UwTimeHeightConfig = {
   imageName: string;
   pagePathTemplate: string;
   imagePathTemplate: string;
-  guideLines: string[];
+  logoUrl: string;
+  explanationUrl: string;
+  guideItems: UwGuideItem[];
+  windCheatSheetUrl: string;
+  pressureAxisLabel: string;
+  pressureLevels: UwPressureLevel[];
 };
 
 export type WeatherLocation = {
@@ -20,12 +42,16 @@ export type WeatherLocation = {
   name: string;
   shortName: string;
   region: string;
-  description: string;
+  nearbyPeaks: string[];
   lat: number;
   lon: number;
   elevationFt: number;
   elevationM: number;
   notes: string[];
+  caltopoUrl: string;
+  caltopoLogoUrl: string;
+  mountainProjectUrl: string;
+  mountainProjectLogoUrl: string;
   noaaPointUrl: string;
   noaaGraphicalUrl: string;
   noaaApiPoint: string;
@@ -39,17 +65,21 @@ export const locations: WeatherLocation[] = [
     name: "Mount Adams",
     shortName: "Mt. Adams",
     region: "South Washington Cascades",
-    description:
-      "A starting dashboard for tracking summit weather, nearby point forecasts, and the UW time-height view for the Mt. Adams area.",
+    nearbyPeaks: [
+      "Goat Rocks peaks to the north (Old Snowy, Ives, Gilbert)",
+    ],
     lat: 46.1833,
     lon: -121.4844,
     elevationFt: 12281,
     elevationM: 3741,
-    notes: [
-      "NOAA point forecasts are grid-box based, so treat them as terrain-aware guidance rather than a perfect summit forecast.",
-      "The UW time-height image is a nearby model cross-section reference, not a direct summit observation.",
-      "Mountain Forecast is useful for summit-focused wind and freezing-level context when the embed loads cleanly.",
-    ],
+    notes: [],
+    caltopoUrl: "https://caltopo.com/map.html#ll=46.19843,-121.49282&z=13&b=mbt",
+    caltopoLogoUrl:
+      "https://play-lh.googleusercontent.com/zpPJZMGgZjSFycF0-FoLh2Vffk7bd7M9MWs8FuMn3i8K41DDlUbpQ_8O0gRt7jgdgtY=w240-h480",
+    mountainProjectUrl:
+      "https://www.mountainproject.com/area/105877037/mount-adams",
+    mountainProjectLogoUrl:
+      "https://play-lh.googleusercontent.com/KN-RI2QvMFqa27aYoTj120lm7iC4g3MS3WjxIWOSzGHaX2-4vS5ZxQYo6B5964zaTw=w240-h480",
     noaaPointUrl:
       "https://forecast.weather.gov/MapClick.php?lat=46.18327717744471&lon=-121.48441314697266",
     noaaGraphicalUrl:
@@ -57,28 +87,38 @@ export const locations: WeatherLocation[] = [
     noaaApiPoint: "https://api.weather.gov/points/46.1833,-121.4844",
     panels: [
       {
-        id: "mountain-forecast",
-        title: "Mountain Forecast",
-        description:
-          "Summit-oriented long-range forecast page for Mount Adams.",
-        url: "https://www.mountain-forecast.com/peaks/Mount-Adams/forecasts/3741",
-        kind: "iframe",
-      },
-      {
-        id: "noaa-point-page",
-        title: "NOAA Point Forecast Page",
-        description:
-          "The standard NOAA point click page with text forecast and nearby conditions.",
-        url: "https://forecast.weather.gov/MapClick.php?lat=46.18327717744471&lon=-121.48441314697266",
-        kind: "iframe",
-      },
-      {
         id: "noaa-graphical-page",
         title: "NOAA Graphical Forecast",
         description:
           "Hourly-style graphical guidance from the same NOAA forecast point.",
         url: "https://forecast.weather.gov/MapClick.php?lat=46.1833&lon=-121.4844&unit=0&lg=english&FcstType=graphical",
-        kind: "iframe",
+        displayMode: "iframe",
+      },
+      {
+        id: "mountain-forecast",
+        title: "Mountain Forecast",
+        description:
+          "Summit-oriented long-range forecast page for Mount Adams.",
+        url: "https://www.mountain-forecast.com/peaks/Mount-Adams/forecasts/3741",
+        displayMode: "link",
+        cellGroup: "summit-sources",
+        logoUrl:
+          "https://play-lh.googleusercontent.com/7vKznYB-helSz_H_EkXTMdL5H2hnMPbgOa5XhJZbh3pQtGD636-okLYNfII7qJL_3g=w240-h480-rw",
+        linkNote:
+          "Mountain Forecast blocks framing in the browser, so this dashboard opens the forecast page directly instead.",
+      },
+      {
+        id: "nwac-east-slopes-south",
+        title: "NWAC Avalanche Forecast",
+        description:
+          "Northwest Avalanche Center forecast for East Slopes South.",
+        url: "https://nwac.us/avalanche-forecast/#/east-slopes-south",
+        displayMode: "link",
+        cellGroup: "summit-sources",
+        logoUrl:
+          "https://files.nwac.us/wp-content/uploads/2022/10/04100643/Board-Members-Photos-9.png",
+        linkNote:
+          "NWAC is shown as a direct link here since its forecast experience is more reliable outside an iframe.",
       },
     ],
     uwTimeHeight: {
@@ -89,11 +129,52 @@ export const locations: WeatherLocation[] = [
         "https://a.atmos.washington.edu/mm5rt/rt/load.cgi?latest+RUN_TAG/images_d3/kosmo.th.gif+text+4%20km%20Kosmos,WA%2046.53N,122.2W",
       imagePathTemplate:
         "https://a.atmos.washington.edu/wrfrt/data/RUN_TAG/images_d3/kosmo.th.gif",
-      guideLines: [
-        "Read left to right for time evolution and top to bottom for height through the atmosphere.",
-        "Use the strongest colored wind bands and tighter contour changes to spot the windiest windows.",
-        "Watch the freezing-level cues and temperature structure before trusting a snow, ice, or rain call.",
-        "Cross-check timing with NOAA and Mountain Forecast before committing to travel or climbing plans.",
+      logoUrl:
+        "https://uw-s3-cdn.s3.us-west-2.amazonaws.com/wp-content/uploads/sites/230/2023/11/02134810/W-Logo_Purple_RGB.png",
+      explanationUrl:
+        "https://cascadeclimbers.com/forum/topic/103812-better-pnw-weather-forecasting/",
+      guideItems: [
+        {
+          title: "Legend",
+          rows: [
+            {
+              label: "x-axis",
+              value: "UTC time, read right to left",
+            },
+            {
+              label: "y-axis",
+              value: "Barometric pressure (see cheat sheet for conversion to elevation)",
+            },
+            {
+              label: "green blobs",
+              value: "Precipitation that can be rain, snow, or sleet depending on temperature",
+            },
+            {
+              label: "red lines",
+              value: "Temperature in Celsius",
+            },
+            {
+              label: "green lines",
+              value: "Relative humidity",
+            },
+          ],
+        },
+        {
+          title: "Wind",
+          description:
+            "Arrows show wind. Use the cheat sheet in this card to decode direction and speed quickly.",
+        },
+      ],
+      windCheatSheetUrl:
+        "https://firefightertoolbox.com/wp-content/uploads/2014/02/WindspeedandDirectionFronts.png",
+      pressureAxisLabel:
+        "The y-axis uses barometric pressure in hectopascal (hPa).",
+      pressureLevels: [
+        { elevationFt: 0, pressureHpa: 1000 },
+        { elevationFt: 3200, pressureHpa: 900 },
+        { elevationFt: 6400, pressureHpa: 800 },
+        { elevationFt: 10000, pressureHpa: 700 },
+        { elevationFt: 13800, pressureHpa: 600 },
       ],
     },
   },

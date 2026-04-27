@@ -34,7 +34,8 @@ type ForecastPeriod = {
 
 type ForecastResponse = {
   properties: {
-    updated: string;
+    updateTime?: string;
+    generatedAt?: string;
     periods: ForecastPeriod[];
   };
 };
@@ -53,21 +54,47 @@ type NoaaForecastCardProps = {
   location: WeatherLocation;
 };
 
-function formatPeriodTime(isoTimestamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "short",
-    hour: "numeric",
-  }).format(new Date(isoTimestamp));
+function formatTimestamp(
+  isoTimestamp: string | undefined,
+  options: Intl.DateTimeFormatOptions,
+  fallback: string,
+) {
+  if (!isoTimestamp) {
+    return fallback;
+  }
+
+  const parsedDate = new Date(isoTimestamp);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return fallback;
+  }
+
+  return new Intl.DateTimeFormat("en-US", options).format(parsedDate);
 }
 
-function formatUpdated(isoTimestamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatPeriodTime(isoTimestamp: string | undefined) {
+  return formatTimestamp(
+    isoTimestamp,
+    {
+      weekday: "short",
+      hour: "numeric",
+    },
+    "Time unavailable",
+  );
+}
+
+function formatUpdated(isoTimestamp: string | undefined) {
+  return formatTimestamp(isoTimestamp, {
     weekday: "short",
     month: "short",
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
-  }).format(new Date(isoTimestamp));
+  }, "Update time unavailable");
+}
+
+function getForecastUpdatedLabel(forecast: ForecastResponse["properties"]) {
+  return forecast.updateTime ?? forecast.generatedAt;
 }
 
 export function NoaaForecastCard({ location }: NoaaForecastCardProps) {
@@ -200,7 +227,9 @@ export function NoaaForecastCard({ location }: NoaaForecastCardProps) {
             </div>
             <div className="summary-pill">
               <span className="summary-label">Updated</span>
-              <strong>{formatUpdated(forecastState.forecast.updated)}</strong>
+              <strong>
+                {formatUpdated(getForecastUpdatedLabel(forecastState.forecast))}
+              </strong>
             </div>
           </div>
 

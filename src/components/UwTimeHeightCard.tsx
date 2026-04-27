@@ -4,7 +4,7 @@ import { InfoCard } from "./InfoCard";
 
 type UwState =
   | { status: "loading" }
-  | { status: "ready"; imageUrl: string; pageUrl: string; runTag: string }
+  | { status: "ready"; imageUrl: string; runTag: string }
   | { status: "error"; message: string };
 
 type UwTimeHeightCardProps = {
@@ -51,6 +51,10 @@ function buildRunCandidates() {
   return candidates;
 }
 
+function buildLatestRunTag() {
+  return buildRunCandidates()[0];
+}
+
 function loadImage(imageUrl: string) {
   return new Promise<void>((resolve, reject) => {
     const image = new Image();
@@ -63,6 +67,8 @@ function loadImage(imageUrl: string) {
 export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
   const uwConfig = location.uwTimeHeight;
   const [uwState, setUwState] = useState<UwState>({ status: "loading" });
+  const latestPageUrl =
+    uwConfig?.pagePathTemplate.replace("RUN_TAG", buildLatestRunTag()) ?? "";
 
   useEffect(() => {
     if (!uwConfig) {
@@ -83,7 +89,6 @@ export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
 
       for (const runTag of candidates) {
         const imageUrl = activeConfig.imagePathTemplate.replace("RUN_TAG", runTag);
-        const pageUrl = activeConfig.pagePathTemplate.replace("RUN_TAG", runTag);
 
         try {
           await loadImage(imageUrl);
@@ -92,7 +97,6 @@ export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
             setUwState({
               status: "ready",
               imageUrl,
-              pageUrl,
               runTag,
             });
           }
@@ -128,22 +132,35 @@ export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
       kicker="Model cross-section"
       className="uw-card"
       actions={
-        uwState.status === "ready" ? (
-          <a
-            className="link-button"
-            href={uwState.pageUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open UW page
-          </a>
+        uwConfig ? (
+          <>
+            <a
+              className="link-button ghost"
+              href={uwConfig.explanationUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Why time heights help
+            </a>
+            <a
+              className="link-button"
+              href={latestPageUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open UW page
+            </a>
+          </>
         ) : null
       }
     >
-      <p className="card-copy">
-        Nearest reference: {uwConfig.stationName}. This is best used as a
-        timing and structure tool alongside the NOAA and summit forecasts.
-      </p>
+      <div className="uw-intro">
+        <p className="card-copy">
+          Nearest reference: {uwConfig.stationName}. This is best used as a
+          timing and structure tool alongside the NOAA and summit forecasts.
+        </p>
+        <img className="uw-logo" src={uwConfig.logoUrl} alt="University of Washington logo" />
+      </div>
 
       {uwState.status === "loading" ? (
         <div className="status-block">
@@ -165,30 +182,75 @@ export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
               src={uwState.imageUrl}
               alt={`UW time-height plot for ${uwConfig.stationName}`}
             />
-            <div className="uw-overlay top-left">
+          </div>
+
+          <div className="uw-meta-grid">
+            <article className="guide-card uw-meta-card">
               <span className="overlay-label">Latest run</span>
               <strong>{formatRunTag(uwState.runTag)}</strong>
-            </div>
-            <div className="uw-overlay top-right">
+            </article>
+            <article className="guide-card uw-meta-card">
               <span className="overlay-label">Nearest point</span>
               <strong>{uwConfig.stationName}</strong>
-            </div>
-            <div className="uw-overlay bottom-left wide">
-              <span className="overlay-label">Quick read</span>
-              <p>
-                Left to right is time. Vertical structure shows how wind,
-                temperature, and moisture change with height. Use this to spot
-                stronger-wind windows and freezing-level shifts.
-              </p>
-            </div>
+            </article>
           </div>
 
           <div className="guide-grid">
-            {uwConfig.guideLines.map((guideLine) => (
-              <article className="guide-card" key={guideLine}>
-                <p>{guideLine}</p>
+            {uwConfig.guideItems.map((guideItem) => (
+              <article
+                className={`guide-card ${
+                  guideItem.title === "Legend"
+                    ? "guide-card--full"
+                    : guideItem.title === "Wind"
+                      ? "guide-card--wide"
+                      : ""
+                }`.trim()}
+                key={guideItem.title}
+              >
+                <h3>{guideItem.title}</h3>
+                {guideItem.description ? <p>{guideItem.description}</p> : null}
+                {guideItem.rows?.length ? (
+                  <div className="legend-list">
+                    {guideItem.rows.map((row) => (
+                      <div className="legend-row" key={row.label}>
+                        <span className="legend-label">{row.label}</span>
+                        <strong className="legend-value">{row.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                {guideItem.title === "Wind" ? (
+                  <a
+                    className="wind-cheat-link"
+                    href={uwConfig.windCheatSheetUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <img
+                      className="wind-cheat-image"
+                      src={uwConfig.windCheatSheetUrl}
+                      alt="Wind speed and direction cheat sheet"
+                    />
+                  </a>
+                ) : null}
               </article>
             ))}
+            <article className="guide-card guide-card--wide">
+              <h3>Pressure To Elevation</h3>
+              <p>{uwConfig.pressureAxisLabel}</p>
+              <div className="pressure-list">
+                {uwConfig.pressureLevels.map((level) => (
+                  <div className="pressure-row" key={level.pressureHpa}>
+                    <span className="pressure-label">
+                      {level.pressureHpa} hPa
+                    </span>
+                    <strong className="pressure-value">
+                      {level.elevationFt.toLocaleString()} ft
+                    </strong>
+                  </div>
+                ))}
+              </div>
+            </article>
           </div>
         </>
       ) : null}
