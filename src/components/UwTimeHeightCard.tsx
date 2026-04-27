@@ -67,8 +67,7 @@ function loadImage(imageUrl: string) {
 export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
   const uwConfig = location.uwTimeHeight;
   const [uwState, setUwState] = useState<UwState>({ status: "loading" });
-  const latestPageUrl =
-    uwConfig?.pagePathTemplate.replace("RUN_TAG", buildLatestRunTag()) ?? "";
+  const pageUrl = uwConfig?.pageUrl ?? "";
 
   useEffect(() => {
     if (!uwConfig) {
@@ -144,7 +143,7 @@ export function UwTimeHeightCard({ location }: UwTimeHeightCardProps) {
             </a>
             <a
               className="link-button"
-              href={latestPageUrl}
+              href={pageUrl}
               target="_blank"
               rel="noreferrer"
             >

@@ -20,6 +20,8 @@ export default function App() {
   const selectedLocation =
     locations.find((location) => location.id === selectedLocationId) ?? locations[0];
   const resolvedTheme = themeMode === "system" ? systemTheme : themeMode;
+  const nearbyPeaksToShow =
+    selectedLocation.nearbyPeaks.length > 0 ? selectedLocation.nearbyPeaks : ["None"];
   const panelGroups = selectedLocation.panels.reduce<
     Array<typeof selectedLocation.panels>
   >((groups, panel) => {
@@ -78,7 +80,7 @@ export default function App() {
             <div className="hero-nearby">
               <p className="section-label">Nearby Peaks</p>
               <div className="hero-nearby-list">
-                {selectedLocation.nearbyPeaks.map((nearbyPeak) => (
+                {nearbyPeaksToShow.map((nearbyPeak) => (
                   <p className="hero-nearby-item" key={nearbyPeak}>
                     {nearbyPeak}
                   </p>
