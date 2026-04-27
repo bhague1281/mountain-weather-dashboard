@@ -15,13 +15,13 @@ npm run dev
 npm run build
 ```
 
-## Deploy to GitHub Pages
+## GitHub Pages
 
-```bash
-npm run deploy
-```
+This repo is set up to deploy automatically to GitHub Pages with a GitHub Actions workflow whenever `main` changes.
 
-The Vite `base` is configured to use relative asset paths during build, which keeps this app friendly to GitHub Pages project sites.
+Expected site URL:
+
+- `https://bhague1281.github.io/mountain-weather-dashboard/`
 
 ## Add more mountains
 
